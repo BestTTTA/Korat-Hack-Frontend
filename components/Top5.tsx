@@ -4,30 +4,25 @@ import { EventEntity } from "@/type/EventType";
 import { EventType } from "@/type/EventType";
 
 export default function Top5() {
+  const [events, setEvents] = useState<EventEntity[]>([]); // Store original events
   const [filteredEvents, setFilteredEvents] = useState<EventEntity[]>([]); // Store filtered events
-  const [eventFilter, setEventFilter] = useState<EventType | "all">("all"); // Filter state
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
 
   const fetchEvents = async () => {
     try {
       const response = await axios.get<{ event_entities: EventEntity[] }>(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/event`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Custom-Header': 'CustomHeaderValue' // Example of another custom header
-          }
-        }
+        `${process.env.NEXT_PUBLIC_BASE_URL}event/`
       );
+      setEvents(response.data.event_entities); // Store the original events
       setFilteredEvents(response.data.event_entities); // Set fetched events
     } catch (err) {
-      setError('Failed to fetch events'); // Set error if the request fails
+      console.error("Failed to fetch events:", err);
+      setError("Failed to fetch events"); // Set error if the request fails
     } finally {
       setLoading(false); // Set loading to false when the request completes
     }
   };
-
 
   // Filter events based on selected event type
   const filterEvents = (filter: EventType | "all", events: EventEntity[]) => {
@@ -43,13 +38,6 @@ export default function Top5() {
   useEffect(() => {
     fetchEvents();
   }, []);
-
-  // When event filter is changed, filter the events
-  useEffect(() => {
-    if (!loading && filteredEvents.length) {
-      filterEvents(eventFilter, filteredEvents);
-    }
-  }, [eventFilter, loading]);
 
   // Handle loading state
   if (loading) {
@@ -76,8 +64,7 @@ export default function Top5() {
           const startDate = event.Start ? new Date(event.Start) : null;
           const endDate = event.End ? new Date(event.End) : null;
           return (
-            <li className="flex flex-col md:flex-row gap-4" key={event.ID}>
-              {/* Image container with 16:9 aspect ratio */}
+            <li className="flex flex-col md:flex-row gap-3" key={event.ID}>
               <div className="w-full md:w-[30%] lg:w-[30%] aspect-[3/4] overflow-hidden rounded-lg">
                 <img
                   src={event.Image}
@@ -85,7 +72,7 @@ export default function Top5() {
                   className="w-full h-full object-cover rounded"
                 />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 mb-8">
                 <h3 className="text-2xl font-extrabold text-orange-600">
                   {event.Title}
                 </h3>

@@ -1,24 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { EventClickArg, EventApi } from "@fullcalendar/core";
+import { EventClickArg, EventApi, EventInput } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import thLocale from "@fullcalendar/core/locales/th"; // Import Thai locale
+import axios from "axios";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import Top5 from "./Top5";
-import mockEvents from "./_mock_/Mock";
-import Image from "next/image";
 import { EventType } from "../type/EventType";
-import { FiCalendar } from "react-icons/fi";
-import { FiMapPin } from "react-icons/fi";
+import { FiCalendar, FiMapPin } from "react-icons/fi";
 import Link from "next/link";
 
 const eventColors: Record<EventType, string> = {
@@ -30,28 +26,66 @@ const eventColors: Record<EventType, string> = {
 };
 
 const Calendar: React.FC = () => {
-  const [currentEvents, setCurrentEvents] = useState<EventApi[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState(mockEvents); // Store filtered events
+  const [currentEvents, setCurrentEvents] = useState<EventInput[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<EventInput[]>([]); // Store filtered events
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [eventFilter, setEventFilter] = useState<EventType | "all">("all"); // Filter state
   const [selectedEvent, setSelectedEvent] = useState<EventApi | null>(null); // Store clicked event details
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
 
   const calendarRef = useRef<FullCalendar | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedEvents = localStorage.getItem("events");
-      if (savedEvents) {
-        setCurrentEvents(JSON.parse(savedEvents));
-      }
+  // Fetch events from API
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get<{ event_entities: any[] }>(
+        `${process.env.NEXT_PUBLIC_BASE_URL}event/`
+      );
+
+      console.log("API Response: ", response.data);
+
+      // Map the events to the correct format for FullCalendar
+      const eventsForCalendar: EventInput[] = response.data.event_entities.map((event) => ({
+        title: event.Title || "No Title", // Fallback if title is missing
+        start: event.Start, // Start is already in ISO format
+        end: event.End, // End is already in ISO format
+        extendedProps: {
+          ...event,
+          eventType: event.EventType || "custom", // Fallback to "custom" if eventType is missing
+        },
+      }));
+
+      setCurrentEvents(eventsForCalendar); // Store the fetched events
+      setFilteredEvents(eventsForCalendar); // Initially show all events
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+      setError("Failed to fetch events");
+      setLoading(false); // End loading even if there is an error
     }
-  }, []);
+  };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("events", JSON.stringify(currentEvents));
+    fetchEvents(); // Fetch events when the component is mounted
+  }, []);
+
+  // Filter events based on selected event type
+  const filterEvents = (filter: EventType | "all") => {
+    if (filter === "all") {
+      setFilteredEvents(currentEvents); // Show all events
+    } else {
+      const filtered = currentEvents.filter(
+        (event) => event.extendedProps?.eventType === filter
+      );
+      setFilteredEvents(filtered);
     }
-  }, [currentEvents]);
+  };
+
+  // When event filter is changed, filter the events
+  useEffect(() => {
+    filterEvents(eventFilter);
+  }, [eventFilter, currentEvents]);
 
   // When an event is clicked, store the event details and open the modal
   const handleEventClick = (selected: EventClickArg) => {
@@ -64,21 +98,6 @@ const Calendar: React.FC = () => {
     setIsDialogOpen(false); // Close the dialog
     setSelectedEvent(null); // Reset the selected event
   };
-
-  // Filter events based on selected event type
-  const filterEvents = (filter: EventType | "all") => {
-    if (filter === "all") {
-      setFilteredEvents(mockEvents); // Show all events
-    } else {
-      const filtered = mockEvents.filter((event) => event.eventType === filter);
-      setFilteredEvents(filtered);
-    }
-  };
-
-  // When event filter is changed, filter the events
-  useEffect(() => {
-    filterEvents(eventFilter);
-  }, [eventFilter]);
 
   return (
     <div className="flex flex-col lg:flex-row w-full px-4 lg:px-10 justify-start items-start gap-8">
@@ -96,36 +115,38 @@ const Calendar: React.FC = () => {
           >
             <option value="all">ทั้งหมด</option>
             <option value="Festival">Festival</option>
-            <option value="ArtandMusic">ArtandMusic</option>
+            <option value="ArtandMusic">Art & Music</option>
             <option value="Sport">Sport</option>
             <option value="Food">Food</option>
           </select>
         </div>
 
         {/* Calendar Section */}
-        <FullCalendar
-          ref={calendarRef}
-          contentHeight={"auto"} // Makes sure the calendar adjusts its content height dynamically
-          plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
-          locale={thLocale}
-          moreLinkText={(num) => `+${num} เพิ่มเติม`}
-          headerToolbar={{
-            right: "today prev,next",
-            center: "title",
-            left: "",
-          }}
-          dayHeaderClassNames={() => {
-            return "bg-orange-600 text-white font-bold rounded";
-          }}
-          initialView="dayGridMonth"
-          editable={true}
-          selectable={true}
-          selectMirror={true}
-          dayMaxEvents={3}
-          events={filteredEvents}
-          eventClick={handleEventClick}
-          eventContent={(arg) => {
-            return (
+        {loading ? (
+          <div>Loading...</div>
+        ) : error ? (
+          <div>Error: {error}</div>
+        ) : (
+          <FullCalendar
+            ref={calendarRef}
+            contentHeight={"auto"} // Makes sure the calendar adjusts its content height dynamically
+            plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
+            locale={thLocale}
+            moreLinkText={(num) => `+${num} เพิ่มเติม`}
+            headerToolbar={{
+              right: "today prev,next",
+              center: "title",
+              left: "",
+            }}
+            dayHeaderClassNames={() => "bg-orange-600 text-white font-bold rounded"}
+            initialView="dayGridMonth"
+            editable={true}
+            selectable={true}
+            selectMirror={true}
+            dayMaxEvents={3}
+            events={filteredEvents} // Use filtered events from API
+            eventClick={handleEventClick}
+            eventContent={(arg) => (
               <div
                 className={`flex w-full rounded items-center overflow-hidden text-[10px] p-1 text-white ${
                   eventColors[arg.event.extendedProps.eventType as EventType]
@@ -133,12 +154,10 @@ const Calendar: React.FC = () => {
               >
                 <span>{arg.event.title}</span>
               </div>
-            );
-          }}
-          dayCellClassNames={() => {
-            return "h-[120px]"; 
-          }}
-        />
+            )}
+            dayCellClassNames={() => "h-[120px]"} // Ensures day cells have a minimum height
+          />
+        )}
       </div>
 
       {/* Events List Section */}
@@ -150,8 +169,8 @@ const Calendar: React.FC = () => {
           {selectedEvent && (
             <div className="flex flex-col lg:flex-row lg:space-x-4">
               <img
-                src={selectedEvent.extendedProps.image}
-                alt=""
+                src={selectedEvent.extendedProps.Image}
+                alt={selectedEvent.title}
                 className="w-full lg:w-[50%] h-auto object-cover rounded-lg"
               />
               <div className=" flex flex-col p-4 lg:p-8 lg:pl-10 w-full lg:w-[50%]">
@@ -185,14 +204,14 @@ const Calendar: React.FC = () => {
                 <div className="flex items-center mt-4">
                   <FiMapPin size={30} color="white" className="mr-4" />
                   <Link
-                    href={selectedEvent.extendedProps.location_link}
+                    href={selectedEvent.extendedProps.LocationLink || "#"}
                     className="text-blue-600 underline "
                   >
                     สถานที่จัดงาน
                   </Link>
                 </div>
                 <p className="text-white mt-2 h-60 overflow-x-auto scrollbar-hide">
-                  {selectedEvent.extendedProps.detail || "No description"}
+                  {selectedEvent.extendedProps.Detail || "No description"}
                 </p>
                 <div className="flex w-full justify-end mt-2">
                   <button onClick={handleCloseDialog} className="text-white">
