@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
 import "./globals.css";
+import { Noto_Sans } from 'next/font/google'
+import { Noto_Sans_Thai } from 'next/font/google'
 
-const poppins = Poppins({ subsets: ["latin"], weight:"500" });
+const notosans = Noto_Sans({
+  weight: '400',
+  subsets: ['latin'],
+});
+const noto_sans_thai = Noto_Sans_Thai({ weight: '400', subsets: ['thai'] })
 
 export const metadata: Metadata = {
-  title: "Calendar App",
-  description: "By Solve It Out",
+  title: "Calender",
+  description: "Thetigerteamacademy(TTTA)",
 };
 
 export default function RootLayout({
@@ -15,8 +20,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={poppins.className}>{children}</body>
+    <html lang="th">
+      <body className={`${noto_sans_thai.className}`}>
+        {children}
+      </body>
     </html>
   );
 }

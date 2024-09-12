@@ -1,31 +1,44 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  formatDate,
-  DateSelectArg,
-  EventClickArg,
-  EventApi,
-} from "@fullcalendar/core";
+import React, { useState, useEffect, useRef } from "react";
+import { EventClickArg, EventApi } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import thLocale from "@fullcalendar/core/locales/th"; // Import Thai locale
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Top5 from "./Top5";
+import mockEvents from "./_mock_/Mock";
+import Image from "next/image";
+import { EventType } from "../type/EventType";
+import { FiCalendar } from "react-icons/fi";
+import { FiMapPin } from "react-icons/fi";
+import Link from "next/link";
+
+const eventColors: Record<EventType, string> = {
+  Festival: "bg-blue-500 border-blue-500",
+  ArtandMusic: "bg-yellow-500 border-yellow-500",
+  Sport: "bg-green-500 border-green-500",
+  Food: "bg-red-500 border-red-500",
+  custom: "bg-gray-500 border-gray-500",
+};
 
 const Calendar: React.FC = () => {
   const [currentEvents, setCurrentEvents] = useState<EventApi[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState(mockEvents); // Store filtered events
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [newEventTitle, setNewEventTitle] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<DateSelectArg | null>(null);
+  const [eventFilter, setEventFilter] = useState<EventType | "all">("all"); // Filter state
+  const [selectedEvent, setSelectedEvent] = useState<EventApi | null>(null); // Store clicked event details
+
+  const calendarRef = useRef<FullCalendar | null>(null);
 
   useEffect(() => {
-    // Load events from local storage when the component mounts
     if (typeof window !== "undefined") {
       const savedEvents = localStorage.getItem("events");
       if (savedEvents) {
@@ -35,140 +48,164 @@ const Calendar: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Save events to local storage whenever they change
     if (typeof window !== "undefined") {
       localStorage.setItem("events", JSON.stringify(currentEvents));
     }
   }, [currentEvents]);
 
-  const handleDateClick = (selected: DateSelectArg) => {
-    setSelectedDate(selected);
-    setIsDialogOpen(true);
-  };
-
+  // When an event is clicked, store the event details and open the modal
   const handleEventClick = (selected: EventClickArg) => {
-    // Prompt user for confirmation before deleting an event
-    if (
-      window.confirm(
-        `Are you sure you want to delete the event "${selected.event.title}"?`
-      )
-    ) {
-      selected.event.remove();
-    }
+    setSelectedEvent(selected.event); // Store the event details
+    setIsDialogOpen(true); // Open the modal
+    console.log(selected);
   };
 
   const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setNewEventTitle("");
+    setIsDialogOpen(false); // Close the dialog
+    setSelectedEvent(null); // Reset the selected event
   };
 
-  const handleAddEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newEventTitle && selectedDate) {
-      const calendarApi = selectedDate.view.calendar; // Get the calendar API instance.
-      calendarApi.unselect(); // Unselect the date range.
-
-      const newEvent = {
-        id: `${selectedDate.start.toISOString()}-${newEventTitle}`,
-        title: newEventTitle,
-        start: selectedDate.start,
-        end: selectedDate.end,
-        allDay: selectedDate.allDay,
-      };
-
-      calendarApi.addEvent(newEvent);
-      handleCloseDialog();
+  // Filter events based on selected event type
+  const filterEvents = (filter: EventType | "all") => {
+    if (filter === "all") {
+      setFilteredEvents(mockEvents); // Show all events
+    } else {
+      const filtered = mockEvents.filter((event) => event.eventType === filter);
+      setFilteredEvents(filtered);
     }
   };
 
+  // When event filter is changed, filter the events
+  useEffect(() => {
+    filterEvents(eventFilter);
+  }, [eventFilter]);
+
   return (
-    <div>
-      <div className="flex w-full px-10 justify-start items-start gap-8">
-        <div className="w-3/12">
-          <div className="py-10 text-2xl font-extrabold px-7">
-            Calendar Events
-          </div>
-          <ul className="space-y-4">
-            {currentEvents.length <= 0 && (
-              <div className="italic text-center text-gray-400">
-                No Events Present
+    <div className="flex flex-col lg:flex-row w-full px-4 lg:px-10 justify-start items-start gap-8">
+      {/* Filter Section */}
+      <div className="w-full lg:w-9/12 mt-8">
+        <div className="mb-4">
+          <label htmlFor="filter" className="text-xl font-semibold mb-2">
+            ประเภทของงานอีเวนท์:
+          </label>
+          <select
+            id="filter"
+            className="ml-2 p-2 border border-gray-300 rounded-lg"
+            value={eventFilter}
+            onChange={(e) => setEventFilter(e.target.value as EventType)}
+          >
+            <option value="all">ทั้งหมด</option>
+            <option value="Festival">Festival</option>
+            <option value="ArtandMusic">ArtandMusic</option>
+            <option value="Sport">Sport</option>
+            <option value="Food">Food</option>
+          </select>
+        </div>
+
+        {/* Calendar Section */}
+        <FullCalendar
+          ref={calendarRef}
+          contentHeight={"auto"} // Makes sure the calendar adjusts its content height dynamically
+          plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
+          locale={thLocale}
+          moreLinkText={(num) => `+${num} เพิ่มเติม`}
+          headerToolbar={{
+            right: "today prev,next",
+            center: "title",
+            left: "",
+          }}
+          dayHeaderClassNames={() => {
+            return "bg-orange-600 text-white font-bold rounded";
+          }}
+          initialView="dayGridMonth"
+          editable={true}
+          selectable={true}
+          selectMirror={true}
+          dayMaxEvents={3}
+          events={filteredEvents}
+          eventClick={handleEventClick}
+          eventContent={(arg) => {
+            return (
+              <div
+                className={`flex w-full rounded items-center overflow-hidden text-[10px] p-1 text-white ${
+                  eventColors[arg.event.extendedProps.eventType as EventType]
+                }`}
+              >
+                <span>{arg.event.title}</span>
               </div>
-            )}
-
-            {currentEvents.length > 0 &&
-              currentEvents.map((event: EventApi) => (
-                <li
-                  className="border border-gray-200 shadow px-4 py-2 rounded-md text-blue-800"
-                  key={event.id}
-                >
-                  {event.title}
-                  <br />
-                  <label className="text-slate-950">
-                    {formatDate(event.start!, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}{" "}
-                    {/* Format event start date */}
-                  </label>
-                </li>
-              ))}
-          </ul>
-        </div>
-
-        <div className="w-9/12 mt-8">
-          <FullCalendar
-            height={"85vh"}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]} // Initialize calendar with required plugins.
-            headerToolbar={{
-              left: "prev,next today",
-              center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
-            }} // Set header toolbar options.
-            initialView="dayGridMonth" // Initial view mode of the calendar.
-            editable={true} // Allow events to be edited.
-            selectable={true} // Allow dates to be selectable.
-            selectMirror={true} // Mirror selections visually.
-            dayMaxEvents={true} // Limit the number of events displayed per day.
-            select={handleDateClick} // Handle date selection to create new events.
-            eventClick={handleEventClick} // Handle clicking on events (e.g., to delete them).
-            eventsSet={(events) => setCurrentEvents(events)} // Update state with current events whenever they change.
-            initialEvents={
-              typeof window !== "undefined"
-                ? JSON.parse(localStorage.getItem("events") || "[]")
-                : []
-            } // Initial events loaded from local storage.
-          />
-        </div>
+            );
+          }}
+          dayCellClassNames={() => {
+            return "h-[120px]"; 
+          }}
+        />
       </div>
 
-      {/* Dialog for adding new events */}
+      {/* Events List Section */}
+      <Top5 />
+
+      {/* Dialog for showing event details */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Event Details</DialogTitle>
-          </DialogHeader>
-          <form className="space-x-5 mb-4" onSubmit={handleAddEvent}>
-            <input
-              type="text"
-              placeholder="Event Title"
-              value={newEventTitle}
-              onChange={(e) => setNewEventTitle(e.target.value)} // Update new event title as the user types.
-              required
-              className="border border-gray-200 p-3 rounded-md text-lg"
-            />
-            <button
-              className="bg-green-500 text-white p-3 mt-5 rounded-md"
-              type="submit"
-            >
-              Add
-            </button>{" "}
-            {/* Button to submit new event */}
-          </form>
+        <DialogContent className="bg-black rounded-lg p-0 shadow-lg bg-opacity-60 border-0 border-black max-w-full w-[80%] md:w-[90%] lg:w-[90%] xl:w-[80%] mx-auto">
+          {selectedEvent && (
+            <div className="flex flex-col lg:flex-row lg:space-x-4">
+              <img
+                src={selectedEvent.extendedProps.image}
+                alt=""
+                className="w-full lg:w-[50%] h-auto object-cover rounded-lg"
+              />
+              <div className=" flex flex-col p-4 lg:p-8 lg:pl-10 w-full lg:w-[50%]">
+                <p className="text-4xl font-semibold text-white">
+                  {selectedEvent.title}
+                </p>
+                <div className="flex items-center mt-4">
+                  <FiCalendar size={30} color="white" className="mr-3" />
+                  <p className="text-white">
+                    <strong className="text-white">เวลาเรื่มงาน: </strong>
+                    {new Intl.DateTimeFormat("th-TH", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }).format(selectedEvent.start!)}
+                    <br />
+                    <span>
+                      {new Intl.DateTimeFormat("th-TH", {
+                        hour: "numeric",
+                        minute: "numeric",
+                      }).format(selectedEvent.start!)}{" "}
+                      -{" "}
+                      {new Intl.DateTimeFormat("th-TH", {
+                        hour: "numeric",
+                        minute: "numeric",
+                      }).format(selectedEvent.end!)}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="flex items-center mt-4">
+                  <FiMapPin size={30} color="white" className="mr-4" />
+                  <Link
+                    href={selectedEvent.extendedProps.location_link}
+                    className="text-blue-600 underline "
+                  >
+                    สถานที่จัดงาน
+                  </Link>
+                </div>
+                <p className="text-white mt-2 h-60 overflow-x-auto scrollbar-hide">
+                  {selectedEvent.extendedProps.detail || "No description"}
+                </p>
+                <div className="flex w-full justify-end mt-2">
+                  <button onClick={handleCloseDialog} className="text-white">
+                    ปิด
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
   );
 };
 
-export default Calendar; // Export the Calendar component for use in other parts of the application.
+export default Calendar;
