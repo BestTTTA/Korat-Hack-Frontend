@@ -4,12 +4,17 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { EventEntity, EventType } from "@/type/EventType";
 import Image from "next/image";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { FiCalendar, FiMapPin } from "react-icons/fi";
+import Link from "next/link";
 
 export default function Top5() {
   const [events, setEvents] = useState<EventEntity[]>([]); // Store original events
   const [filteredEvents, setFilteredEvents] = useState<EventEntity[]>([]); // Store filtered events
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
+  const [selectedEvent, setSelectedEvent] = useState<EventEntity | null>(null); // State for the selected event
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // State for dialog open/close
 
   // Function to sort events: Upcoming Events first, Past Events later
   const sortEvents = (events: EventEntity[]): EventEntity[] => {
@@ -64,6 +69,12 @@ export default function Top5() {
     fetchEvents();
   }, []);
 
+  // Handle event click to open the dialog
+  const handleEventClick = (event: EventEntity) => {
+    setSelectedEvent(event); // Set the selected event
+    setIsDialogOpen(true); // Open the dialog
+  };
+
   // Handle loading state
   if (loading) {
     return <div>Loading...</div>;
@@ -78,31 +89,32 @@ export default function Top5() {
     <div className="w-full lg:w-3/12 px-4 lg:px-0">
       <div className="text-4xl md:text-5xl font-extrabold pt-8 pb-5 text-center lg:text-left">
         <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-          5 อันดับมาแรง
+          5 อีเวนท์ยอดฮิต
         </span>
       </div>
       <ul className="space-y-4">
         {filteredEvents.length <= 0 && (
-          <div className="italic text-center text-gray-400">
-            No Events Present
-          </div>
+          <div className="italic text-center text-gray-400">No Events Present</div>
         )}
         {filteredEvents.slice(0, 5).map((event) => {
           const startDate = event.Start ? new Date(event.Start) : null;
           const endDate = event.End ? new Date(event.End) : null;
           return (
-            <li className="flex flex-col md:flex-row gap-3" key={event.ID}>
+            <li
+              className="flex flex-col md:flex-row gap-3 cursor-pointer"
+              key={event.ID}
+              onClick={() => handleEventClick(event)} // Open dialog on event click
+            >
               <div className="w-full md:w-[30%] lg:w-[30%] aspect-[3/4] overflow-hidden rounded-lg relative">
-                {/* ใช้ <Image /> จาก next/image สำหรับประสิทธิภาพที่ดีขึ้น */}
                 <Image
                   src={event.Image}
                   alt={event.Title}
                   layout="fill"
                   objectFit="cover"
                   className="rounded"
-                  priority={false} // ตั้งค่าเป็น true สำหรับรูปภาพที่สำคัญที่สุด
-                  placeholder="blur" // ใช้ placeholder แบบ blur สำหรับประสบการณ์การโหลดที่ดีขึ้น
-                  blurDataURL="/blur.avif" // เพิ่ม blurDataURL ถ้ามี
+                  priority={false}
+                  placeholder="blur"
+                  blurDataURL="/blur.avif"
                 />
               </div>
               <div className="flex-1 mb-8">
@@ -135,6 +147,57 @@ export default function Top5() {
           );
         })}
       </ul>
+
+      {/* Dialog for displaying selected event */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="bg-black rounded-lg p-0 shadow-lg bg-opacity-60 lg:h-auto border-0 border-black h-[700px] max-w-full w-[80%] md:w-[70%] lg:w-[80%] xl:w-[70%] mx-auto overflow-x-auto scrollbar-hide">
+          {selectedEvent && (
+            <div className="flex flex-col lg:flex-row lg:space-x-4">
+              <img
+                src={selectedEvent.Image}
+                alt={selectedEvent.Title}
+                className="w-full lg:w-[50%] h-auto object-cover rounded-lg"
+              />
+              <div className="flex flex-col p-4 lg:p-8 lg:pl-10 w-full lg:w-[50%]">
+                <p className="text-2xl lg:text-4xl font-semibold text-white">
+                  {selectedEvent.Title}
+                </p>
+                <div className="flex items-center mt-4">
+                  <FiCalendar size={30} color="white" className="mr-3" />
+                  <p className="text-white">
+                    <strong className="text-white">เวลาเริ่มงาน: </strong>
+                    {new Intl.DateTimeFormat("th-TH", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }).format(new Date(selectedEvent.Start))}
+                    <br />
+                    <span>
+                      {new Intl.DateTimeFormat("th-TH", {
+                        hour: "numeric",
+                        minute: "numeric",
+                      }).format(new Date(selectedEvent.Start))}{" "}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="flex items-center mt-4">
+                  <FiMapPin size={30} color="white" className="mr-4" />
+                  <Link href={selectedEvent.LocationLink || "#"} className="text-blue-600 underline">
+                    สถานที่จัดงาน
+                  </Link>
+                </div>
+                <p className="text-white mt-2">{selectedEvent.Detail || "No description"}</p>
+                <div className="flex w-full justify-end mt-2">
+                  <button onClick={() => setIsDialogOpen(false)} className="text-white">
+                    ปิด
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

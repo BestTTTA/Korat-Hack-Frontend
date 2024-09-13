@@ -3,13 +3,18 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { EventEntity } from "@/type/EventType";
-import Image from "next/image"; // เพิ่มการนำเข้า Image จาก next/image
+import Image from "next/image";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { FiCalendar, FiMapPin } from "react-icons/fi";
+import Link from "next/link";
 
 export default function LatestEvent() {
   const [events, setEvents] = useState<EventEntity[]>([]); // เก็บเหตุการณ์ต้นฉบับ
   const [showAllEvents, setShowAllEvents] = useState(false); // Toggle state
   const [loading, setLoading] = useState(true); // สถานะการโหลด
   const [error, setError] = useState<string | null>(null); // สถานะข้อผิดพลาด
+  const [selectedEvent, setSelectedEvent] = useState<EventEntity | null>(null); // เก็บเหตุการณ์ที่ถูกเลือก
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // สถานะการเปิด/ปิด Dialog
 
   // ฟังก์ชันสำหรับจัดเรียงเหตุการณ์: Upcoming Events อยู่ด้านบน, Past Events อยู่ด้านล่าง
   const sortEvents = (events: EventEntity[]): EventEntity[] => {
@@ -63,14 +68,18 @@ export default function LatestEvent() {
     return <div>Error: {error}</div>;
   }
 
+  // ฟังก์ชันจัดการการคลิกเหตุการณ์
+  const handleEventClick = (event: EventEntity) => {
+    setSelectedEvent(event); // เก็บเหตุการณ์ที่ถูกเลือก
+    setIsDialogOpen(true); // เปิด Dialog
+  };
+
   return (
-    <div className="w-full p-10 border border-teal-500">
-      {/* ส่วนหัวข้อ */}
-      <div className="text-4xl md:text-5xl font-extrabold pt-8 pb-5 lg:text-left">
+    <div className="w-full p-10">
+      <div className="text-3xl font-extrabold pt-8 pb-5 lg:text-left">
         <span>อีเวนท์ที่ไกล้เข้ามา</span>
       </div>
 
-      {/* รายการเหตุการณ์ */}
       <ul className="flex flex-wrap gap-4">
         {eventsToShow.length <= 0 && (
           <div className="italic text-center text-gray-400">
@@ -103,8 +112,9 @@ export default function LatestEvent() {
 
           return (
             <li
-              className="w-fit flex flex-col gap-3"
+              className="w-fit flex flex-col gap-3 cursor-pointer"
               key={event.ID}
+              onClick={() => handleEventClick(event)} 
             >
               <div className="w-[200px]">
                 <div className="w-[200px] aspect-[3/4] overflow-hidden rounded-lg relative">
@@ -119,8 +129,8 @@ export default function LatestEvent() {
                     blurDataURL="/blur.avif"
                   />
                 </div>
-                <div className="flex flex-col mb-8">
-                  <h3 className="text-2xl font-extrabold text-orange-600">
+                <div className="flex flex-col mb-8 mt-1">
+                  <h3 className="lg:text-xl font-extrabold text-orange-600">
                     {event.Title}
                   </h3>
                   <div className="text-xs text-slate-950 mt-1">
@@ -152,7 +162,61 @@ export default function LatestEvent() {
         })}
       </ul>
 
-      {/* ปุ่มสลับระหว่าง "ดูเพิ่มเติม" และ "ดูน้อยลง" */}
+      {/* Dialog สำหรับแสดงรายละเอียดเหตุการณ์ */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="bg-black rounded-lg p-0 shadow-lg bg-opacity-60 lg:h-auto border-0 border-black h-[700px] max-w-full w-[80%] md:w-[70%] lg:w-[80%] xl:w-[70%] mx-auto overflow-x-auto scrollbar-hide">
+          {selectedEvent && (
+            <div className="flex flex-col lg:flex-row lg:space-x-4">
+              <img
+                src={selectedEvent.Image}
+                alt={selectedEvent.Title}
+                className="w-full lg:w-[50%] h-auto object-cover rounded-lg"
+              />
+              <div className="flex flex-col p-4 lg:p-8 lg:pl-10 w-full lg:w-[50%]">
+                <p className="text-2xl lg:text-4xl font-semibold text-white">
+                  {selectedEvent.Title}
+                </p>
+                <div className="flex items-center mt-4">
+                  <FiCalendar size={30} color="white" className="mr-3" />
+                  <p className="text-white">
+                    <strong className="text-white">เวลาเริ่มงาน: </strong>
+                    {new Intl.DateTimeFormat("th-TH", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }).format(new Date(selectedEvent.Start))}
+                    <br />
+                    <span>
+                      {new Intl.DateTimeFormat("th-TH", {
+                        hour: "numeric",
+                        minute: "numeric",
+                      }).format(new Date(selectedEvent.Start))}{" "}
+                    </span>
+                  </p>
+                </div>
+                <div className="flex items-center mt-4">
+                  <FiMapPin size={30} color="white" className="mr-4" />
+                  <Link
+                    href={selectedEvent.LocationLink || "#"}
+                    className="text-blue-600 underline"
+                  >
+                    สถานที่จัดงาน
+                  </Link>
+                </div>
+                <p className="text-white mt-2">
+                  {selectedEvent.Detail || "No description"}
+                </p>
+                <div className="flex w-full justify-end mt-2">
+                  <button onClick={() => setIsDialogOpen(false)} className="text-white">
+                    ปิด
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <div className="flex w-full justify-center mt-6">
         <button
           onClick={() => setShowAllEvents(!showAllEvents)}
