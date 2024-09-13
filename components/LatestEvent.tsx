@@ -3,33 +3,46 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { EventEntity } from "@/type/EventType";
+import Image from "next/image"; // เพิ่มการนำเข้า Image จาก next/image
 
 export default function LatestEvent() {
-  const [events, setEvents] = useState<EventEntity[]>([]); // Store original events
+  const [events, setEvents] = useState<EventEntity[]>([]); // เก็บเหตุการณ์ต้นฉบับ
   const [showAllEvents, setShowAllEvents] = useState(false); // Toggle state
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState<string | null>(null); // Error state
+  const [loading, setLoading] = useState(true); // สถานะการโหลด
+  const [error, setError] = useState<string | null>(null); // สถานะข้อผิดพลาด
 
-  // Fetch events from API
+  // ฟังก์ชันสำหรับจัดเรียงเหตุการณ์: Upcoming Events อยู่ด้านบน, Past Events อยู่ด้านล่าง
+  const sortEvents = (events: EventEntity[]): EventEntity[] => {
+    const now = new Date();
+    return events.sort((a, b) => {
+      const aEnd = a.End ? new Date(a.End) : new Date(0); // ถ้าไม่มี End ให้ถือว่าเป็น Past Event
+      const bEnd = b.End ? new Date(b.End) : new Date(0);
+
+      const aIsUpcoming = aEnd >= now;
+      const bIsUpcoming = bEnd >= now;
+
+      if (aIsUpcoming && !bIsUpcoming) return -1; // a อยู่ด้านบน
+      if (!aIsUpcoming && bIsUpcoming) return 1; // b อยู่ด้านบน
+      // ถ้าอยู่ในกลุ่มเดียวกัน จัดเรียงตามวันที่เริ่มต้นจากเร็วไปช้า
+      return new Date(a.Start).getTime() - new Date(b.Start).getTime();
+    });
+  };
+
+  // ดึงข้อมูลเหตุการณ์จาก API
   const fetchEvents = async () => {
     try {
       const response = await axios.get<{ event_entities: EventEntity[] }>(
         `${process.env.NEXT_PUBLIC_BASE_URL}event/`
       );
 
-      // Sort events by the start date (earliest first)
-      const sortedEvents = response.data.event_entities.sort((a, b) => {
-        const dateA = new Date(a.Start).getTime();
-        const dateB = new Date(b.Start).getTime();
-        return dateA - dateB; // Sort by the earliest start date
-      });
-      setEvents(sortedEvents); // Store sorted events
-      console.log(sortedEvents); // For debugging purposes
+      // จัดเรียงเหตุการณ์โดยเรียกใช้ sortEvents
+      const sortedEvents = sortEvents(response.data.event_entities);
+      setEvents(sortedEvents); // เก็บเหตุการณ์ที่จัดเรียงแล้ว
     } catch (err) {
       console.error("Failed to fetch events:", err);
-      setError("Failed to fetch events"); // Set error if the request fails
+      setError("ไม่สามารถดึงข้อมูลเหตุการณ์ได้"); // ตั้งค่า error หากการร้องขอล้มเหลว
     } finally {
-      setLoading(false); // Set loading to false when the request completes
+      setLoading(false); // ตั้งค่า loading เป็น false เมื่อการร้องขอเสร็จสิ้น
     }
   };
 
@@ -37,30 +50,32 @@ export default function LatestEvent() {
     fetchEvents();
   }, []);
 
-  // Show only the first 6 events by default on mobile/tablet
+  // แสดงเฉพาะบางเหตุการณ์หรือทั้งหมดขึ้นอยู่กับ showAllEvents
   const eventsToShow = showAllEvents ? events : events.slice(0, 6);
 
-  // Handle loading state
+  // แสดงสถานะการโหลด
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  // Handle error state
+  // แสดงสถานะ error
   if (error) {
     return <div>Error: {error}</div>;
   }
 
   return (
-    <div className="w-full border border-red-500 p-10">
-      <div className="text-4xl md:text-5xl font-extrabold pt-8 pb-5 text-center lg:text-left">
-        <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-          อีเวนท์ที่ไกล้เข้ามา
-        </span>
+    <div className="w-full p-10 border border-teal-500">
+      {/* ส่วนหัวข้อ */}
+      <div className="text-4xl md:text-5xl font-extrabold pt-8 pb-5 lg:text-left">
+        <span>อีเวนท์ที่ไกล้เข้ามา</span>
       </div>
 
-      <ul className="space-y-4">
+      {/* รายการเหตุการณ์ */}
+      <ul className="flex flex-wrap gap-4">
         {eventsToShow.length <= 0 && (
-          <div className="italic text-center text-gray-400">No Events Present</div>
+          <div className="italic text-center text-gray-400">
+            No Events Present
+          </div>
         )}
 
         {eventsToShow.map((event) => {
@@ -68,18 +83,18 @@ export default function LatestEvent() {
           const endDate = event.End ? new Date(event.End) : null;
           let timeInfo = "ไม่สามารถคำนวณเวลาได้";
 
-          // Calculate days or hours left until the event starts
+          // คำนวณวันหรือชั่วโมงที่เหลือจนถึงวันเริ่มอีเวนท์
           if (startDate) {
-            const currentTime = new Date().getTime(); // Current time
-            const eventTime = startDate.getTime(); // Event start time
+            const currentTime = new Date().getTime(); // เวลาปัจจุบัน
+            const eventTime = startDate.getTime(); // เวลาวันเริ่มอีเวนท์
 
             const timeDiff = eventTime - currentTime;
             if (timeDiff > 0) {
-              const daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24)); // Calculate days left
+              const daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24)); // คำนวณวันที่เหลือ
               if (daysLeft > 0) {
                 timeInfo = `อีก ${daysLeft} วันก่อนอีเวนท์เริ่ม`;
               } else {
-                const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60)); // Calculate hours if less than a day
+                const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60)); // คำนวณชั่วโมงถ้าน้อยกว่าหนึ่งวัน
                 timeInfo = `อีก ${hoursLeft} ชั่วโมงก่อนอีเวนท์เริ่ม`;
               }
             } else {
@@ -88,49 +103,57 @@ export default function LatestEvent() {
           }
 
           return (
-            <li className="flex flex-col md:flex-row gap-3" key={event.ID}>
-              <div className="w-full md:w-[30%] lg:w-[30%] aspect-[3/4] overflow-hidden rounded-lg">
-                <img
-                  src={event.Image}
-                  alt={event.Title}
-                  className="w-full h-full object-cover rounded"
-                />
-              </div>
-              <div className="flex-1 mb-8">
-                <h3 className="text-2xl font-extrabold text-orange-600">
-                  {event.Title}
-                </h3>
-                <div className="text-xs text-slate-950 mt-1">
-                  <span>
-                    {startDate && !isNaN(startDate.getTime())
-                      ? new Intl.DateTimeFormat("th-TH", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }).format(startDate)
-                      : "Invalid start date"}
-                  </span>
-                  <span className="mx-2">-</span>
-                  <span>
-                    {endDate && !isNaN(endDate.getTime())
-                      ? new Intl.DateTimeFormat("th-TH", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }).format(endDate)
-                      : "Invalid end date"}
-                  </span>
+            <li
+              className="w-fit flex flex-col gap-3"
+              key={event.ID}
+            >
+              <div className="w-[200px]">
+                <div className="w-[200px] aspect-[3/4] overflow-hidden rounded-lg relative">
+                  <Image
+                    src={event.Image}
+                    alt={event.Title}
+                    layout="fill"
+                    objectFit="cover"
+                    className="rounded"
+                    priority={false}
+                    placeholder="blur"
+                    blurDataURL="/blur.avif"
+                  />
                 </div>
-                <p className="text-red-500 text-xs mt-2">
-                  {timeInfo}
-                </p>
+                <div className="flex flex-col mb-8">
+                  <h3 className="text-2xl font-extrabold text-orange-600">
+                    {event.Title}
+                  </h3>
+                  <div className="text-xs text-slate-950 mt-1">
+                    <span>
+                      {startDate && !isNaN(startDate.getTime())
+                        ? new Intl.DateTimeFormat("th-TH", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }).format(startDate)
+                        : "Invalid start date"}
+                    </span>
+                    <span className="mx-2">-</span>
+                    <span>
+                      {endDate && !isNaN(endDate.getTime())
+                        ? new Intl.DateTimeFormat("th-TH", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }).format(endDate)
+                        : "Invalid end date"}
+                    </span>
+                  </div>
+                  <p className="text-red-500 text-xs mt-2">{timeInfo}</p>
+                </div>
               </div>
             </li>
           );
         })}
       </ul>
 
-      {/* Toggle between "ดูเพิ่มเติม" and "ดูน้อยลง" */}
+      {/* ปุ่มสลับระหว่าง "ดูเพิ่มเติม" และ "ดูน้อยลง" */}
       <div className="flex w-full justify-center mt-6">
         <button
           onClick={() => setShowAllEvents(!showAllEvents)}

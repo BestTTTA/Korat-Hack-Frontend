@@ -27,37 +27,33 @@ const eventColors: Record<EventType, string> = {
 
 const Calendar: React.FC = () => {
   const [currentEvents, setCurrentEvents] = useState<EventInput[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState<EventInput[]>([]); // Store filtered events
+  const [filteredEvents, setFilteredEvents] = useState<EventInput[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [eventFilter, setEventFilter] = useState<EventType | "all">("all"); // Filter state
-  const [selectedEvent, setSelectedEvent] = useState<EventApi | null>(null); // Store clicked event details
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState<string | null>(null); // Error state
+  const [eventFilter, setEventFilter] = useState<EventType | "all">("all"); 
+  const [selectedEvent, setSelectedEvent] = useState<EventApi | null>(null); 
+  const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState<string | null>(null); 
 
   const calendarRef = useRef<FullCalendar | null>(null);
 
-  // Fetch events from API
+
   const fetchEvents = async () => {
     try {
       const response = await axios.get<{ event_entities: any[] }>(
         `${process.env.NEXT_PUBLIC_BASE_URL}event/`
       );
-
-      console.log("API Response: ", response.data);
-
-      // Map the events to the correct format for FullCalendar
       const eventsForCalendar: EventInput[] = response.data.event_entities.map((event) => ({
-        title: event.Title || "No Title", // Fallback if title is missing
-        start: event.Start, // Start is already in ISO format
-        end: event.End, // End is already in ISO format
+        title: event.Title || "No Title", 
+        start: event.Start, 
+        end: event.End, 
         extendedProps: {
           ...event,
-          eventType: event.EventType || "custom", // Fallback to "custom" if eventType is missing
+          eventType: event.EventType || "custom",
         },
       }));
 
-      setCurrentEvents(eventsForCalendar); // Store the fetched events
-      setFilteredEvents(eventsForCalendar); // Initially show all events
+      setCurrentEvents(eventsForCalendar); 
+      setFilteredEvents(eventsForCalendar); 
       setLoading(false);
     } catch (err) {
       console.error("Failed to fetch events:", err);
