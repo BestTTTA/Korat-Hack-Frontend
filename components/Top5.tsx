@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { EventEntity } from "@/type/EventType";
 import { EventType } from "@/type/EventType";
+import Image from "next/image";
 
 export default function Top5() {
   const [events, setEvents] = useState<EventEntity[]>([]); // Store original events
@@ -58,7 +59,9 @@ export default function Top5() {
       </div>
       <ul className="space-y-4">
         {filteredEvents.length <= 0 && (
-          <div className="italic text-center text-gray-400">No Events Present</div>
+          <div className="italic text-center text-gray-400">
+            No Events Present
+          </div>
         )}
         {filteredEvents.slice(0, 5).map((event) => {
           const startDate = event.Start ? new Date(event.Start) : null;
