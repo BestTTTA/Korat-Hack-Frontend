@@ -161,7 +161,7 @@ const Calendar: React.FC = () => {
 
       {/* Dialog for showing event details */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-black rounded-lg p-0 shadow-lg bg-opacity-60 border-0 border-black max-w-full w-[80%] md:w-[90%] lg:w-[90%] xl:w-[80%] mx-auto">
+        <DialogContent className="bg-black rounded-lg p-0 shadow-lg bg-opacity-60 lg:h-auto border-0 border-black h-[700px] max-w-full w-[80%] md:w-[70%] lg:w-[80%] xl:w-[70%] mx-auto overflow-x-auto scrollbar-hide">
           {selectedEvent && (
             <div className="flex flex-col lg:flex-row lg:space-x-4">
               <img
@@ -170,13 +170,13 @@ const Calendar: React.FC = () => {
                 className="w-full lg:w-[50%] h-auto object-cover rounded-lg"
               />
               <div className=" flex flex-col p-4 lg:p-8 lg:pl-10 w-full lg:w-[50%]">
-                <p className="text-4xl font-semibold text-white">
+                <p className="text-2xl lg:text-4xl font-semibold text-white">
                   {selectedEvent.title}
                 </p>
                 <div className="flex items-center mt-4">
                   <FiCalendar size={30} color="white" className="mr-3" />
                   <p className="text-white">
-                    <strong className="text-white">เวลาเรื่มงาน: </strong>
+                    <strong className="text-white">เวลาเริ่มงาน: </strong>
                     {new Intl.DateTimeFormat("th-TH", {
                       year: "numeric",
                       month: "long",
@@ -188,11 +188,11 @@ const Calendar: React.FC = () => {
                         hour: "numeric",
                         minute: "numeric",
                       }).format(selectedEvent.start!)}{" "}
-                      -{" "}
+                      {/* -{" "}
                       {new Intl.DateTimeFormat("th-TH", {
                         hour: "numeric",
                         minute: "numeric",
-                      }).format(selectedEvent.end!)}
+                      }).format(selectedEvent.end!)} */}
                     </span>
                   </p>
                 </div>
@@ -206,7 +206,7 @@ const Calendar: React.FC = () => {
                     สถานที่จัดงาน
                   </Link>
                 </div>
-                <p className="text-white mt-2 h-60 overflow-x-auto scrollbar-hide">
+                <p className="text-white mt-2">
                   {selectedEvent.extendedProps.Detail || "No description"}
                 </p>
                 <div className="flex w-full justify-end mt-2">

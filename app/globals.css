@@ -45,3 +45,20 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+.fc-more-popover {
+  z-index: 1000; /* ให้แน่ใจว่าอยู่เหนือองค์ประกอบอื่นๆ */
+  height: 30%; /* กำหนดความสูงสูงสุดเพื่อป้องกันไม่ให้ popup เลยออกไป */
+  overflow-y: auto; /* ถ้ามีเหตุการณ์จำนวนมาก ให้แสดง scrollbar */
+  background-color: white; /* สีพื้นหลังให้แยกชัดเจน */
+  border-radius: 10px; /* ทำให้ขอบของ popup ดูสวยงาม */
+  padding: 10px; /* เพิ่ม padding ภายใน popup */
+}
+
+.fc-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+

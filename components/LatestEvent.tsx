@@ -83,18 +83,17 @@ export default function LatestEvent() {
           const endDate = event.End ? new Date(event.End) : null;
           let timeInfo = "ไม่สามารถคำนวณเวลาได้";
 
-          // คำนวณวันหรือชั่วโมงที่เหลือจนถึงวันเริ่มอีเวนท์
           if (startDate) {
-            const currentTime = new Date().getTime(); // เวลาปัจจุบัน
-            const eventTime = startDate.getTime(); // เวลาวันเริ่มอีเวนท์
+            const currentTime = new Date().getTime(); 
+            const eventTime = startDate.getTime(); 
 
             const timeDiff = eventTime - currentTime;
             if (timeDiff > 0) {
-              const daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24)); // คำนวณวันที่เหลือ
+              const daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24)); 
               if (daysLeft > 0) {
                 timeInfo = `อีก ${daysLeft} วันก่อนอีเวนท์เริ่ม`;
               } else {
-                const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60)); // คำนวณชั่วโมงถ้าน้อยกว่าหนึ่งวัน
+                const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60)); 
                 timeInfo = `อีก ${hoursLeft} ชั่วโมงก่อนอีเวนท์เริ่ม`;
               }
             } else {
