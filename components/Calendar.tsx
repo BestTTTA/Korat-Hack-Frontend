@@ -140,18 +140,19 @@ const Calendar: React.FC = () => {
             selectable={true}
             selectMirror={true}
             dayMaxEvents={3}
-            events={filteredEvents} // Use filtered events from API
+            events={filteredEvents} 
             eventClick={handleEventClick}
             eventContent={(arg) => (
               <div
-                className={`flex w-full rounded items-center overflow-hidden text-[10px] p-1 text-white ${
-                  eventColors[arg.event.extendedProps.eventType as EventType]
-                }`}
+                className={`flex flex-col w-full rounded text-white ${eventColors[arg.event.extendedProps.eventType as EventType]}`}
               >
-                <span>{arg.event.title}</span>
+                <div className="flex justify-between items-center">
+                  <span>{arg.event.title}</span>
+                </div>
               </div>
             )}
-            dayCellClassNames={() => "h-[120px]"} // Ensures day cells have a minimum height
+            
+            dayCellClassNames={() => "h-[120px]"} 
           />
         )}
       </div>

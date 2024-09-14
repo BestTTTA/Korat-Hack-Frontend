@@ -16,6 +16,7 @@
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@radix-ui/react-dialog": "^1.1.1",
+    "@react-google-maps/api": "^2.19.3",
     "axios": "^1.7.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
