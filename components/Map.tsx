@@ -92,6 +92,7 @@ const Map: React.FC = () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}event/`);
       const data = await response.json();
+      console.log("api response",data)
 
       const eventsWithCoords = await Promise.all(
         data.event_entities.map(async (event: any) => {
@@ -203,7 +204,7 @@ const Map: React.FC = () => {
                 icon={{
                   url: entity.Image, // ใช้รูปจาก API
                   scaledSize: new window.google.maps.Size(60, 80), // กำหนดขนาด
-                  labelOrigin: new window.google.maps.Point(20, 40),
+                  labelOrigin: new window.google.maps.Point(30, 90),
                 }}
                 label={
                   isStartingSoon
