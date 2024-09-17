@@ -77,7 +77,7 @@ const Map: React.FC = () => {
               };
             }
           }
-          return business; // ถ้าไม่พบพิกัดให้ใช้ข้อมูลเดิม
+          return business;
         })
       );
 
@@ -202,16 +202,16 @@ const Map: React.FC = () => {
                 position={{ lat, lng }}
                 onClick={() => setSelectedEntity(entity)}
                 icon={{
-                  url: entity.Image, // ใช้รูปจาก API
-                  scaledSize: new window.google.maps.Size(60, 80), // กำหนดขนาด
+                  url: entity.Image, 
+                  scaledSize: new window.google.maps.Size(60, 80), 
                   labelOrigin: new window.google.maps.Point(30, 90),
                 }}
                 label={
                   isStartingSoon
                     ? {
-                        text: getDaysUntilEvent(entity.Start), // แสดงจำนวนวันที่เหลือ
+                        text: getDaysUntilEvent(entity.Start), 
                         color: "red",
-                        fontWeight: "bold",
+                        // fontWeight: "bold",
                       }
                     : undefined
                 }
