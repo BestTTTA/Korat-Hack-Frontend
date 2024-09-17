@@ -8,79 +8,76 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FiCalendar, FiMapPin } from "react-icons/fi";
 import Link from "next/link";
 
+// Function to geocode LocationLink into coordinates
+const geocodeLocation = async (locationLink: string) => {
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        locationLink
+      )}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+    );
+    const data = await response.json();
+    if (data.results && data.results[0]) {
+      const { lat, lng } = data.results[0].geometry.location;
+      return { lat, lng };
+    } else {
+      console.error("Geocoding failed", data);
+      return null;
+    }
+  } catch (err) {
+    console.error("Error geocoding location:", err);
+    return null;
+  }
+};
+
 export default function Top5() {
-  const [events, setEvents] = useState<EventEntity[]>([]); // Store original events
-  const [filteredEvents, setFilteredEvents] = useState<EventEntity[]>([]); // Store filtered events
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState<string | null>(null); // Error state
-  const [selectedEvent, setSelectedEvent] = useState<EventEntity | null>(null); // State for the selected event
-  const [isDialogOpen, setIsDialogOpen] = useState(false); // State for dialog open/close
+  const [events, setEvents] = useState<EventEntity[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<EventEntity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventEntity | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Function to sort events: Upcoming Events first, Past Events later
-  const sortEvents = (events: EventEntity[]): EventEntity[] => {
-    const now = new Date();
-    return events.sort((a, b) => {
-      const aEnd = a.End ? new Date(a.End) : new Date(0); // If no End date, consider as Past Event
-      const bEnd = b.End ? new Date(b.End) : new Date(0);
-
-      const aIsUpcoming = aEnd >= now;
-      const bIsUpcoming = bEnd >= now;
-
-      if (aIsUpcoming && !bIsUpcoming) return -1; // a comes before b
-      if (!aIsUpcoming && bIsUpcoming) return 1; // b comes before a
-      // If both are in the same group, sort by Start date ascending
-      return new Date(a.Start).getTime() - new Date(b.Start).getTime();
-    });
-  };
-
-  // Fetch events from API
   const fetchEvents = async () => {
     try {
       const response = await axios.get<{ event_entities: EventEntity[] }>(
         `${process.env.NEXT_PUBLIC_BASE_URL}event/`
       );
-
-      // Sort events by upcoming first, then past
-      const sortedEvents = sortEvents(response.data.event_entities);
-      setEvents(sortedEvents); // Store sorted events
-      setFilteredEvents(sortedEvents); // Initialize filtered events
+      const eventsWithCoords = await Promise.all(
+        response.data.event_entities.map(async (event) => {
+          // Check if event has LocationLink and fetch coordinates
+          if (event.LocationLink) {
+            const coords = await geocodeLocation(event.LocationLink);
+            if (coords) {
+              return { ...event, Latitude: coords.lat, Longitude: coords.lng };
+            }
+          }
+          return event; // Return event without modifying if no LocationLink
+        })
+      );
+      setEvents(eventsWithCoords);
+      setFilteredEvents(eventsWithCoords);
     } catch (err) {
       console.error("Failed to fetch events:", err);
-      setError("ไม่สามารถดึงข้อมูลเหตุการณ์ได้"); // Set error message
+      setError("ไม่สามารถดึงข้อมูลเหตุการณ์ได้");
     } finally {
-      setLoading(false); // Set loading to false
+      setLoading(false);
     }
   };
 
-  // Filter events based on selected event type
-  const filterEvents = (filter: EventType | "all", events: EventEntity[]) => {
-    let filtered: EventEntity[];
-    if (filter === "all") {
-      filtered = events;
-    } else {
-      filtered = events.filter((event) => event.EventType === filter);
-    }
-    const sortedFiltered = sortEvents(filtered); // Sort filtered events
-    setFilteredEvents(sortedFiltered);
-  };
-
-  // Fetch events when component mounts
   useEffect(() => {
     fetchEvents();
   }, []);
 
-  // Handle event click to open the dialog
   const handleEventClick = (event: EventEntity) => {
-    setSelectedEvent(event); // Set the selected event
-    setIsDialogOpen(true); // Open the dialog
+    setSelectedEvent(event);
+    setIsDialogOpen(true);
   };
 
-  // Handle loading state
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  // Handle error state
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -103,7 +100,7 @@ export default function Top5() {
             <li
               className="flex flex-col md:flex-row gap-3 cursor-pointer"
               key={event.ID}
-              onClick={() => handleEventClick(event)} // Open dialog on event click
+              onClick={() => handleEventClick(event)}
             >
               <div className="w-full md:w-[30%] lg:w-[30%] aspect-[3/4] overflow-hidden rounded-lg relative">
                 <Image
@@ -148,7 +145,6 @@ export default function Top5() {
         })}
       </ul>
 
-      {/* Dialog for displaying selected event */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-black rounded-lg p-0 shadow-lg bg-opacity-60 lg:h-auto border-0 border-black h-[700px] max-w-full w-[80%] md:w-[70%] lg:w-[80%] xl:w-[70%] mx-auto overflow-x-auto scrollbar-hide">
           {selectedEvent && (

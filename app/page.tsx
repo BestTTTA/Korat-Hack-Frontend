@@ -10,7 +10,7 @@ export default function Home() {
     <main className="min-h-screen bg-white flex flex-col gap-14">
       <Calendar />
       <Map3D/>
-      {/* <Map/> */}
+      <Map/>
       {/* <TestCache/> */}
       <LatestEvent />
       <Business />

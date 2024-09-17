@@ -28,85 +28,68 @@ const Map: React.FC = () => {
 
   const [businesses, setBusinesses] = useState<BusinessEntity[]>([]);
   const [events, setEvents] = useState<EventEntity[]>([]);
-  const [combinedEntities, setCombinedEntities] = useState<CombinedEntity[]>(
-    []
-  );
-  const [selectedEntity, setSelectedEntity] = useState<CombinedEntity | null>(
-    null
-  );
+  const [combinedEntities, setCombinedEntities] = useState<CombinedEntity[]>([]);
+  const [selectedEntity, setSelectedEntity] = useState<CombinedEntity | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Function to geocode LocationLink into coordinates
-  const geocodeLocation = async (locationLink: string) => {
+  const resolveShortLink = async (shortUrl: string) => {
     try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          locationLink
-        )}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-      );
+      const response = await fetch(`/api/extractLatLon?url=${encodeURIComponent(shortUrl)}`);
       const data = await response.json();
-      if (data.results && data.results[0]) {
-        const { lat, lng } = data.results[0].geometry.location;
-        return { lat, lng };
+  
+      if (data.lat && data.lon) {
+        return { lat: data.lat, lon: data.lon };
       } else {
-        console.error("Geocoding failed", data);
+        console.error("Failed to resolve short link:", data.error);
         return null;
       }
-    } catch (err) {
-      console.error("Error geocoding location:", err);
+    } catch (error) {
+      console.error("Error resolving short link:", error);
       return null;
     }
   };
 
-  // Fetch businesses from the API
   const fetchBusinesses = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}business/`
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}business/`);
       const data = await response.json();
-
-      // Add lat/lng if they don't exist
+  
       const businessesWithCoords = await Promise.all(
-        data.business_entities.map(async (business: BusinessEntity) => {
-          if (!business.Latitude || !business.Longitude) {
-            const coords = await geocodeLocation(business.Location);
+        data.business_entities.map(async (business: any) => {
+          if (business.LocationLink || business.Location) {
+            const coords = await resolveShortLink(business.LocationLink || business.Location);
             if (coords) {
-              return { ...business, Latitude: coords.lat, Longitude: coords.lng };
+              return { ...business, Latitude: coords.lat, Longitude: coords.lon };
             }
           }
-          return business;
+          return business; // ถ้าไม่พบพิกัดให้ใช้ข้อมูลเดิม
         })
       );
-
+      
       setBusinesses(businessesWithCoords || []);
     } catch (err) {
       console.error("Failed to fetch businesses:", err);
       setError("Failed to fetch businesses.");
     }
   }, []);
-
-  // Fetch events from the API
+  
   const fetchEvents = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}event/`);
       const data = await response.json();
-
+  
       const eventsWithCoords = await Promise.all(
-        data.event_entities.map(async (event: EventEntity) => {
-          if (!event.Latitude || !event.Longitude) {
-            const coords = await geocodeLocation(
-              event.LocationLink || event.Location
-            );
+        data.event_entities.map(async (event: any) => {
+          if (event.LocationLink) {
+            const coords = await resolveShortLink(event.LocationLink);
             if (coords) {
-              return { ...event, Latitude: coords.lat, Longitude: coords.lng };
+              return { ...event, Latitude: coords.lat, Longitude: coords.lon };
             }
           }
           return event;
         })
       );
-
       setEvents(eventsWithCoords || []);
     } catch (err) {
       console.error("Failed to fetch events:", err);
@@ -114,19 +97,16 @@ const Map: React.FC = () => {
     }
   }, []);
 
-  // Fetch both businesses and events
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     await Promise.all([fetchBusinesses(), fetchEvents()]);
     setLoading(false);
   }, [fetchBusinesses, fetchEvents]);
 
-  // Fetch the data on component mount
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
 
-  // Combine businesses and events
   useEffect(() => {
     const combined: CombinedEntity[] = [
       ...businesses.map((business) => ({
@@ -157,24 +137,11 @@ const Map: React.FC = () => {
           center={center}
         >
           {combinedEntities.map((entity) => {
-            const lat =
-              typeof entity.Latitude === "string"
-                ? parseFloat(entity.Latitude)
-                : entity.Latitude;
-            const lng =
-              typeof entity.Longitude === "string"
-                ? parseFloat(entity.Longitude)
-                : entity.Longitude;
+            const lat = parseFloat(entity.Latitude as any);
+            const lng = parseFloat(entity.Longitude as any);
 
-            if (
-              typeof lat !== "number" ||
-              isNaN(lat) ||
-              typeof lng !== "number" ||
-              isNaN(lng)
-            ) {
-              console.warn(
-                `Invalid Latitude or Longitude for entity ID ${entity.ID}`
-              );
+            if (isNaN(lat) || isNaN(lng)) {
+              console.warn(`Invalid Latitude or Longitude for entity ID ${entity.ID}`);
               return null;
             }
 
@@ -184,116 +151,88 @@ const Map: React.FC = () => {
                 position={{ lat, lng }}
                 onClick={() => setSelectedEntity(entity)}
                 icon={{
-                  url:
-                    entity.entityType === "business"
-                      ? "/business-marker.png"
-                      : "/event-marker.png", // Different marker icons for business and event
-                  scaledSize: new window.google.maps.Size(30, 30),
+                  url: entity.Image, // ใช้รูปจาก API
+                  scaledSize: new window.google.maps.Size(40, 40), // กำหนดขนาด
                 }}
               />
             );
           })}
 
-          {selectedEntity &&
-            (() => {
-              const selectedLat =
-                typeof selectedEntity.Latitude === "string"
-                  ? parseFloat(selectedEntity.Latitude)
-                  : selectedEntity.Latitude;
-              const selectedLng =
-                typeof selectedEntity.Longitude === "string"
-                  ? parseFloat(selectedEntity.Longitude)
-                  : selectedEntity.Longitude;
+          {selectedEntity && (
+            <InfoWindow
+              position={{
+                lat: parseFloat(selectedEntity.Latitude as any),
+                lng: parseFloat(selectedEntity.Longitude as any),
+              }}
+              onCloseClick={() => setSelectedEntity(null)}
+            >
+              <div className="p-2">
+                <h3 className="font-bold">{selectedEntity.Title}</h3>
+                <Image
+                  src={selectedEntity.Image}
+                  alt={selectedEntity.Title}
+                  width={100}
+                  height={100}
+                  className="rounded mt-2"
+                />
+                <p className="mt-2">{selectedEntity.Detail}</p>
 
-              // Check if latitude and longitude are valid numbers for the selected entity
-              if (
-                typeof selectedLat !== "number" ||
-                isNaN(selectedLat) ||
-                typeof selectedLng !== "number" ||
-                isNaN(selectedLng)
-              ) {
-                console.warn(
-                  `Invalid Latitude or Longitude for selected entity ID ${selectedEntity.ID}`
-                );
-                return null;
-              }
-
-              return (
-                <InfoWindow
-                  position={{ lat: selectedLat, lng: selectedLng }}
-                  onCloseClick={() => setSelectedEntity(null)}
-                >
-                  <div className="p-2">
-                    <h3 className="font-bold">{selectedEntity.Title}</h3>
-                    <Image
-                      src={selectedEntity.Image}
-                      alt={selectedEntity.Title}
-                      width={100}
-                      height={100}
-                      className="rounded mt-2"
-                    />
-                    <p className="mt-2">{selectedEntity.Detail}</p>
-
-                    {selectedEntity.entityType === "business" ? (
-                      <>
-                        <Link
-                          href={selectedEntity.Location}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 underline mt-2 block"
-                        >
-                          ดูตำแหน่งบน Google Maps
-                        </Link>
-                        {selectedEntity.PageLink && (
-                          <Link
-                            href={selectedEntity.PageLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 underline mt-2 block"
-                          >
-                            ดูเพิ่มเติม
-                          </Link>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <Link
-                          href={
-                            selectedEntity.LocationLink ||
-                            selectedEntity.Location
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 underline mt-2 block"
-                        >
-                          ดูตำแหน่งบน Google Maps
-                        </Link>
-                        {selectedEntity.RegisterLink && (
-                          <Link
-                            href={selectedEntity.RegisterLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 underline mt-2 block"
-                          >
-                            ลงทะเบียน
-                          </Link>
-                        )}
-                        {selectedEntity.PageLink && (
-                          <Link
-                            href={selectedEntity.PageLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 underline mt-2 block"
-                          >
-                            ดูเพิ่มเติม
-                          </Link>
-                        )}
-                      </>
+                {selectedEntity.entityType === "business" ? (
+                  <>
+                    <Link
+                      href={selectedEntity.Location}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline mt-2 block"
+                    >
+                      ดูตำแหน่งบน Google Maps
+                    </Link>
+                    {selectedEntity.PageLink && (
+                      <Link
+                        href={selectedEntity.PageLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline mt-2 block"
+                      >
+                        ดูเพิ่มเติม
+                      </Link>
                     )}
-                  </div>
-                </InfoWindow>
-              );
-            })()}
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href={selectedEntity.LocationLink || selectedEntity.Location}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline mt-2 block"
+                    >
+                      ดูตำแหน่งบน Google Maps
+                    </Link>
+                    {selectedEntity.RegisterLink && (
+                      <Link
+                        href={selectedEntity.RegisterLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline mt-2 block"
+                      >
+                        ลงทะเบียน
+                      </Link>
+                    )}
+                    {selectedEntity.PageLink && (
+                      <Link
+                        href={selectedEntity.PageLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline mt-2 block"
+                      >
+                        ดูเพิ่มเติม
+                      </Link>
+                    )}
+                  </>
+                )}
+              </div>
+            </InfoWindow>
+          )}
         </GoogleMap>
       )}
     </div>
