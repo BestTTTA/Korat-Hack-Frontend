@@ -28,16 +28,22 @@ const Map: React.FC = () => {
 
   const [businesses, setBusinesses] = useState<BusinessEntity[]>([]);
   const [events, setEvents] = useState<EventEntity[]>([]);
-  const [combinedEntities, setCombinedEntities] = useState<CombinedEntity[]>([]);
-  const [selectedEntity, setSelectedEntity] = useState<CombinedEntity | null>(null);
+  const [combinedEntities, setCombinedEntities] = useState<CombinedEntity[]>(
+    []
+  );
+  const [selectedEntity, setSelectedEntity] = useState<CombinedEntity | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const resolveShortLink = async (shortUrl: string) => {
     try {
-      const response = await fetch(`/api/extractLatLon?url=${encodeURIComponent(shortUrl)}`);
+      const response = await fetch(
+        `/api/extractLatLon?url=${encodeURIComponent(shortUrl)}`
+      );
       const data = await response.json();
-  
+
       if (data.lat && data.lon) {
         return { lat: data.lat, lon: data.lon };
       } else {
@@ -52,33 +58,41 @@ const Map: React.FC = () => {
 
   const fetchBusinesses = useCallback(async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}business/`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}business/`
+      );
       const data = await response.json();
-  
+
       const businessesWithCoords = await Promise.all(
         data.business_entities.map(async (business: any) => {
           if (business.LocationLink || business.Location) {
-            const coords = await resolveShortLink(business.LocationLink || business.Location);
+            const coords = await resolveShortLink(
+              business.LocationLink || business.Location
+            );
             if (coords) {
-              return { ...business, Latitude: coords.lat, Longitude: coords.lon };
+              return {
+                ...business,
+                Latitude: coords.lat,
+                Longitude: coords.lon,
+              };
             }
           }
           return business; // ถ้าไม่พบพิกัดให้ใช้ข้อมูลเดิม
         })
       );
-      
+
       setBusinesses(businessesWithCoords || []);
     } catch (err) {
       console.error("Failed to fetch businesses:", err);
       setError("Failed to fetch businesses.");
     }
   }, []);
-  
+
   const fetchEvents = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}event/`);
       const data = await response.json();
-  
+
       const eventsWithCoords = await Promise.all(
         data.event_entities.map(async (event: any) => {
           if (event.LocationLink) {
@@ -118,6 +132,36 @@ const Map: React.FC = () => {
     setCombinedEntities(combined);
   }, [businesses, events]);
 
+  const getEventStatus = (startDate: string): string => {
+    const now = new Date();
+    const eventStart = new Date(startDate);
+    if (eventStart > now) {
+      return `เริ่มวันที่ ${eventStart.toLocaleDateString("th-TH", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })}`;
+    }
+    return "เริ่มแล้ว";
+  };
+
+  const getDaysUntilEvent = (startDate: string): string => {
+    const now = new Date();
+    const eventStart = new Date(startDate);
+    const diffInDays = Math.ceil(
+      (eventStart.getTime() - now.getTime()) / (1000 * 3600 * 24)
+    );
+    return diffInDays > 0 ? `จะเริ่มในอีก ${diffInDays} วัน` : "เริ่มแล้ว";
+  };
+
+  const isEventStartingSoon = (startDate: string): boolean => {
+    const now = new Date();
+    const eventStart = new Date(startDate);
+    const diffInDays =
+      (eventStart.getTime() - now.getTime()) / (1000 * 3600 * 24);
+    return diffInDays <= 1000 && eventStart > now;
+  };
+
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading Maps...</div>;
 
@@ -141,9 +185,15 @@ const Map: React.FC = () => {
             const lng = parseFloat(entity.Longitude as any);
 
             if (isNaN(lat) || isNaN(lng)) {
-              console.warn(`Invalid Latitude or Longitude for entity ID ${entity.ID}`);
+              console.warn(
+                `Invalid Latitude or Longitude for entity ID ${entity.ID}`
+              );
               return null;
             }
+
+            const isStartingSoon =
+              entity.entityType === "event" &&
+              isEventStartingSoon(entity.Start);
 
             return (
               <Marker
@@ -152,8 +202,18 @@ const Map: React.FC = () => {
                 onClick={() => setSelectedEntity(entity)}
                 icon={{
                   url: entity.Image, // ใช้รูปจาก API
-                  scaledSize: new window.google.maps.Size(40, 40), // กำหนดขนาด
+                  scaledSize: new window.google.maps.Size(60, 80), // กำหนดขนาด
+                  labelOrigin: new window.google.maps.Point(20, 40),
                 }}
+                label={
+                  isStartingSoon
+                    ? {
+                        text: getDaysUntilEvent(entity.Start), // แสดงจำนวนวันที่เหลือ
+                        color: "red",
+                        fontWeight: "bold",
+                      }
+                    : undefined
+                }
               />
             );
           })}
@@ -173,7 +233,10 @@ const Map: React.FC = () => {
                   alt={selectedEntity.Title}
                   width={100}
                   height={100}
-                  className="rounded mt-2"
+                  className="rounded"
+                  priority={false}
+                  placeholder="blur"
+                  blurDataURL="/blur.avif"
                 />
                 <p className="mt-2">{selectedEntity.Detail}</p>
 
@@ -200,8 +263,11 @@ const Map: React.FC = () => {
                   </>
                 ) : (
                   <>
+                    <p>{getEventStatus(selectedEntity.Start)}</p>
                     <Link
-                      href={selectedEntity.LocationLink || selectedEntity.Location}
+                      href={
+                        selectedEntity.LocationLink || selectedEntity.Location
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 underline mt-2 block"
