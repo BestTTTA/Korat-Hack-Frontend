@@ -14,17 +14,22 @@ const Map3D: React.FC = () => {
     const loadSketchfabScript = () => {
       return new Promise<void>((resolve, reject) => {
         const script = document.createElement("script");
-        script.src = "https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js";
+        script.src =
+          "https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js";
         script.async = true;
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Failed to load the Sketchfab API script."));
+        script.onerror = () =>
+          reject(new Error("Failed to load the Sketchfab API script."));
         document.body.appendChild(script);
       });
     };
 
     loadSketchfabScript()
       .then(() => {
-        const client = new window.Sketchfab("1.12.1", document.getElementById("api-frame"));
+        const client = new window.Sketchfab(
+          "1.12.1",
+          document.getElementById("api-frame")
+        );
         client.init("12538fea497b435aa7cc449b2ec4b9c6", {
           success: (api: any) => {
             api.start();
@@ -32,30 +37,29 @@ const Map3D: React.FC = () => {
               console.log("Viewer is ready");
 
               // Create a new annotation
-              const positionStart = [0, 0, 0]; // Example start position
-              const positionEnd = [1, 1, 1];   // Example end position
-              const eye = [0, 0, 10];          // Eye position (camera view)
-              const target = [0, 0, 0];        // Target position (focus point)
+              const positionStart = [0, 0, 0];
+              const positionEnd = [1, 1, 1];
+              const eye = [0, 0, 10];
+              const target = [0, 0, 0];
 
               api.createAnnotation(
                 positionStart,
                 positionEnd,
                 eye,
                 target,
-                "New Annotation",   // Title of the annotation
-                "This is a custom annotation added dynamically.", // Content
+                "New Annotation",
+                "This is a custom annotation added dynamically.",
                 (err: any, index: number) => {
                   if (!err) {
                     console.log(`Annotation created with index: ${index}`);
 
-                    // Update the annotation after creation (optional)
                     api.updateAnnotation(
                       index,
                       {
                         title: "Updated Annotation Title",
                         content: "Updated content for the annotation.",
-                        eye: [0, 0, 15],  // Updated eye position
-                        target: [0, 0, 0] // Updated target position
+                        eye: [0, 0, 15],
+                        target: [0, 0, 0],
                       },
                       (err: any, info: any) => {
                         if (!err) {
@@ -76,7 +80,7 @@ const Map3D: React.FC = () => {
       })
       .catch((error) => console.error(error));
   }, []);
-  
+
   return (
     // <div className="flex justify-center w-full">
     //   <iframe
@@ -87,9 +91,9 @@ const Map3D: React.FC = () => {
     //     className="w-[90%] h-[600px] border"
     //   />
     // </div>
-    <div className="flex justify-center w-full">
+    <div className="hidden md:flex justify-center w-full">
       <iframe
-        className="w-[90%] h-[600px] borde"
+        className="w-[90%] h-[600px]"
         title="Mega City 2026"
         allow="autoplay; fullscreen; xr-spatial-tracking"
         xr-spatial-tracking
