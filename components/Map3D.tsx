@@ -82,15 +82,6 @@ const Map3D: React.FC = () => {
   }, []);
 
   return (
-    // <div className="flex justify-center w-full">
-    //   <iframe
-    //     id="api-frame"
-    //     title="Mega City 2026"
-    //     allow="autoplay; xr-spatial-tracking"
-    //     src="https://sketchfab.com/models/12538fea497b435aa7cc449b2ec4b9c6/embed?ui_annotations=1"
-    //     className="w-[90%] h-[600px] border"
-    //   />
-    // </div>
     <div className="hidden md:flex justify-center w-full">
       <iframe
         className="w-[90%] h-[600px]"

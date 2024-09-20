@@ -92,7 +92,7 @@ const Map: React.FC = () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}event/`);
       const data = await response.json();
-      console.log("api response",data)
+      console.log("api response", data);
 
       const eventsWithCoords = await Promise.all(
         data.event_entities.map(async (event: any) => {
@@ -202,14 +202,14 @@ const Map: React.FC = () => {
                 position={{ lat, lng }}
                 onClick={() => setSelectedEntity(entity)}
                 icon={{
-                  url: entity.Image, 
-                  scaledSize: new window.google.maps.Size(60, 80), 
+                  url: entity.Image,
+                  scaledSize: new window.google.maps.Size(60, 80),
                   labelOrigin: new window.google.maps.Point(30, 90),
                 }}
                 label={
                   isStartingSoon
                     ? {
-                        text: getDaysUntilEvent(entity.Start), 
+                        text: getDaysUntilEvent(entity.Start),
                         color: "red",
                         // fontWeight: "bold",
                       }
@@ -227,19 +227,25 @@ const Map: React.FC = () => {
               }}
               onCloseClick={() => setSelectedEntity(null)}
             >
-              <div className="p-2">
-                <h3 className="font-bold">{selectedEntity.Title}</h3>
-                <Image
-                  src={selectedEntity.Image}
-                  alt={selectedEntity.Title}
-                  width={100}
-                  height={100}
-                  className="rounded"
-                  priority={false}
-                  placeholder="blur"
-                  blurDataURL="/blur.avif"
-                />
-                <p className="mt-2">{selectedEntity.Detail}</p>
+              <div className="p-4 flex flex-col space-y-4 w-fit max-w-xs bg-white shadow-lg rounded-lg">
+                <h3 className="text-xl font-semibold text-center">
+                  {selectedEntity.Title}
+                </h3>
+                <div className="w-full flex justify-center border border-gray-300 rounded-lg overflow-hidden">
+                  <Image
+                    src={selectedEntity.Image}
+                    alt={selectedEntity.Title}
+                    className="w-full h-auto rounded"
+                    priority={false}
+                    width={800} // Set the actual width of the image
+                    height={600} // Set the actual height of the image
+                    placeholder="blur"
+                    blurDataURL="/blur.avif"
+                    layout="responsive"
+                  />
+                </div>
+
+                <p className="text-gray-700 text-sm">{selectedEntity.Detail}</p>
 
                 {selectedEntity.entityType === "business" ? (
                   <>
@@ -247,7 +253,7 @@ const Map: React.FC = () => {
                       href={selectedEntity.Location}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 underline mt-2 block"
+                      className="text-blue-600 underline text-sm mt-2"
                     >
                       ดูตำแหน่งบน Google Maps
                     </Link>
@@ -256,7 +262,7 @@ const Map: React.FC = () => {
                         href={selectedEntity.PageLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 underline mt-2 block"
+                        className="text-blue-600 underline text-sm mt-2"
                       >
                         ดูเพิ่มเติม
                       </Link>
@@ -264,14 +270,16 @@ const Map: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <p>{getEventStatus(selectedEntity.Start)}</p>
+                    <p className="text-sm text-gray-600">
+                      {getEventStatus(selectedEntity.Start)}
+                    </p>
                     <Link
                       href={
                         selectedEntity.LocationLink || selectedEntity.Location
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 underline mt-2 block"
+                      className="text-blue-600 underline text-sm mt-2"
                     >
                       ดูตำแหน่งบน Google Maps
                     </Link>
@@ -280,7 +288,7 @@ const Map: React.FC = () => {
                         href={selectedEntity.RegisterLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 underline mt-2 block"
+                        className="text-blue-600 underline text-sm mt-2"
                       >
                         ลงทะเบียน
                       </Link>
@@ -290,7 +298,7 @@ const Map: React.FC = () => {
                         href={selectedEntity.PageLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 underline mt-2 block"
+                        className="text-blue-600 underline text-sm mt-2"
                       >
                         ดูเพิ่มเติม
                       </Link>
