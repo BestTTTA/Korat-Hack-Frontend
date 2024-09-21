@@ -3,37 +3,45 @@
 @tailwind utilities;
 
 
-
-
 .fc-event-dot {
   display: none !important;
+ 
 }
 
 .fc-daygrid-day-selected {
-  @apply bg-blue-100 ;
+  @apply bg-orange-200;
+ 
 }
 
 .fc-toolbar {
-  @apply bg-gray-200 p-4 rounded-md shadow-md;
+  @apply bg-orange-200 p-4 shadow-md rounded-xl;
+ 
+  
 }
 
 .fc-button {
   @apply  text-white px-4 py-2 rounded-lg;
+
 }
 
 .fc-button.fc-today-button {
   @apply bg-orange-500 hover:bg-orange-600;
+   
+  
 }
 
 .calendar-day-cell {
   border: 2px solid black; /* สีเส้นขอบ */
-  border-radius: 4px; /* มุมโค้ง */
+  border-radius: 10px; /* มุมโค้ง */
   background-color: white; /* สีพื้นหลัง */
   transition: background-color 0.3s; /* เอฟเฟกต์เมื่อ hover */
+ 
+  
 }
 
 .calendar-day-cell:hover {
   background-color: #f5f5f5; /* สีพื้นหลังเมื่อ hover */
+  
 }
 
 /* Hide scrollbar */
@@ -47,7 +55,6 @@
 }
 
 .fc-more-popover {
-  z-index: 1000; /* ให้แน่ใจว่าอยู่เหนือองค์ประกอบอื่นๆ */
   height: 30%; /* กำหนดความสูงสูงสุดเพื่อป้องกันไม่ให้ popup เลยออกไป */
   overflow-y: auto; /* ถ้ามีเหตุการณ์จำนวนมาก ให้แสดง scrollbar */
   background-color: white; /* สีพื้นหลังให้แยกชัดเจน */
@@ -59,6 +66,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+ 
 }
 
+.donate {
+  z-index: 999;
+}
 

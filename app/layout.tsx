@@ -10,8 +10,8 @@ const notosans = Noto_Sans({
 const noto_sans_thai = Noto_Sans_Thai({ weight: '400', subsets: ['thai'] })
 
 export const metadata: Metadata = {
-  title: "Calender",
-  description: "Thetigerteamacademy(TTTA)",
+  title: "Korat Calendar",
+  description: "Thetigerteamacademy(TTTA) with Korat Head",
 };
 
 export default function RootLayout({

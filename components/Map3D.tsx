@@ -82,7 +82,10 @@ const Map3D: React.FC = () => {
   }, []);
 
   return (
-    <div className="hidden md:flex justify-center w-full">
+    <div className="hidden flex-col items-center md:flex justify-center w-full">
+      <div className="text-3xl font-extrabold pt-8 pb-5 text-left">
+        <span>3D Map Korat(Mockup)</span>
+      </div>
       <iframe
         className="w-[90%] h-[600px]"
         title="Mega City 2026"

@@ -169,7 +169,7 @@ const Map: React.FC = () => {
   return (
     <div className="w-full p-10">
       <div className="text-3xl font-extrabold pt-8 pb-5 lg:text-left">
-        <span>สถานที่ต่างๆ บนแผนที่</span>
+        <span>กิจกรรมต่างๆ บนแผนที่</span>
       </div>
 
       {loading && <div>Loading...</div>}
@@ -203,8 +203,8 @@ const Map: React.FC = () => {
                 onClick={() => setSelectedEntity(entity)}
                 icon={{
                   url: entity.Image,
-                  scaledSize: new window.google.maps.Size(60, 80),
-                  labelOrigin: new window.google.maps.Point(30, 90),
+                  scaledSize: new window.google.maps.Size(40, 50),
+                  labelOrigin: new window.google.maps.Point(20, 60),
                 }}
                 label={
                   isStartingSoon
