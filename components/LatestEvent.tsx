@@ -44,7 +44,7 @@ export default function LatestEvent() {
       const sortedEvents = sortEvents(response.data.event_entities);
       setEvents(sortedEvents); // เก็บเหตุการณ์ที่จัดเรียงแล้ว
     } catch (err) {
-      console.error("Failed to fetch events:", err);
+      // console.error("Failed to fetch events:", err);
       setError("ไม่สามารถดึงข้อมูลเหตุการณ์ได้"); // ตั้งค่า error หากการร้องขอล้มเหลว
     } finally {
       setLoading(false); // ตั้งค่า loading เป็น false เมื่อการร้องขอเสร็จสิ้น
@@ -127,6 +127,7 @@ export default function LatestEvent() {
                     priority={false}
                     placeholder="blur"
                     blurDataURL="/blur.avif"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 </div>
                 <div className="flex flex-col mb-8 mt-1">

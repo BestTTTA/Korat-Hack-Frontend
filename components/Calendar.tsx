@@ -56,7 +56,7 @@ const Calendar: React.FC = () => {
       setFilteredEvents(eventsForCalendar); 
       setLoading(false);
     } catch (err) {
-      console.error("Failed to fetch events:", err);
+      // console.error("Failed to fetch events:", err);
       setError("Failed to fetch events");
       setLoading(false); // End loading even if there is an error
     }
@@ -87,7 +87,7 @@ const Calendar: React.FC = () => {
   const handleEventClick = (selected: EventClickArg) => {
     setSelectedEvent(selected.event); // Store the event details
     setIsDialogOpen(true); // Open the modal
-    console.log(selected);
+    // console.log(selected);
   };
 
   const handleCloseDialog = () => {

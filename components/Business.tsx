@@ -32,10 +32,9 @@ export default function Business() {
       const response = await axios.get<{ business_entities: BusinessEntity[] }>(
         `${process.env.NEXT_PUBLIC_BASE_URL}business/` // ตรวจสอบ endpoint ให้ถูกต้อง
       );
-      console.log('API response:', response.data); // ตรวจสอบข้อมูลที่ได้
       setBusinesses(response.data.business_entities || []); // ตรวจสอบว่าเป็น array หรือไม่
     } catch (err) {
-      console.error("Failed to fetch businesses:", err);
+      // console.error("Failed to fetch businesses:", err);
       setError("ไม่สามารถดึงข้อมูลธุรกิจได้"); // ตั้งค่า error หากการร้องขอล้มเหลว
     } finally {
       setLoading(false); // ตั้งค่า loading เป็น false เมื่อการร้องขอเสร็จสิ้น
@@ -95,6 +94,7 @@ export default function Business() {
                   priority={false}
                   placeholder="blur"
                   blurDataURL="/blur.avif"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
               </div>
               <div className="flex flex-col mb-8 mt-1">

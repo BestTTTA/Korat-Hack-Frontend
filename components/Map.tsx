@@ -47,11 +47,9 @@ const Map: React.FC = () => {
       if (data.lat && data.lon) {
         return { lat: data.lat, lon: data.lon };
       } else {
-        console.error("Failed to resolve short link:", data.error);
         return null;
       }
     } catch (error) {
-      console.error("Error resolving short link:", error);
       return null;
     }
   };
@@ -83,7 +81,6 @@ const Map: React.FC = () => {
 
       setBusinesses(businessesWithCoords || []);
     } catch (err) {
-      console.error("Failed to fetch businesses:", err);
       setError("Failed to fetch businesses.");
     }
   }, []);
@@ -92,7 +89,6 @@ const Map: React.FC = () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}event/`);
       const data = await response.json();
-      console.log("api response", data);
 
       const eventsWithCoords = await Promise.all(
         data.event_entities.map(async (event: any) => {
@@ -107,7 +103,6 @@ const Map: React.FC = () => {
       );
       setEvents(eventsWithCoords || []);
     } catch (err) {
-      console.error("Failed to fetch events:", err);
       setError("Failed to fetch events.");
     }
   }, []);
@@ -167,8 +162,8 @@ const Map: React.FC = () => {
   if (!isLoaded) return <div>Loading Maps...</div>;
 
   return (
-    <div className="w-full p-10">
-      <div className="text-3xl font-extrabold pt-8 pb-5 lg:text-left">
+    <div className="w-full lg:p-10">
+      <div className="text-3xl font-extrabold pt-8 pb-5 lg:text-left px-2">
         <span>กิจกรรมต่างๆ บนแผนที่</span>
       </div>
 
@@ -186,9 +181,6 @@ const Map: React.FC = () => {
             const lng = parseFloat(entity.Longitude as any);
 
             if (isNaN(lat) || isNaN(lng)) {
-              console.warn(
-                `Invalid Latitude or Longitude for entity ID ${entity.ID}`
-              );
               return null;
             }
 
@@ -211,7 +203,6 @@ const Map: React.FC = () => {
                     ? {
                         text: getDaysUntilEvent(entity.Start),
                         color: "red",
-                        // fontWeight: "bold",
                       }
                     : undefined
                 }
@@ -237,11 +228,12 @@ const Map: React.FC = () => {
                     alt={selectedEntity.Title}
                     className="w-full h-auto rounded"
                     priority={false}
-                    width={800} // Set the actual width of the image
-                    height={600} // Set the actual height of the image
+                    width={800}
+                    height={600}
                     placeholder="blur"
                     blurDataURL="/blur.avif"
                     layout="responsive"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 </div>
 

@@ -21,11 +21,11 @@ const geocodeLocation = async (locationLink: string) => {
       const { lat, lng } = data.results[0].geometry.location;
       return { lat, lng };
     } else {
-      console.error("Geocoding failed", data);
+      // console.error("Geocoding failed", data);
       return null;
     }
   } catch (err) {
-    console.error("Error geocoding location:", err);
+    // console.error("Error geocoding location:", err);
     return null;
   }
 };
@@ -58,7 +58,7 @@ export default function Top5() {
       setEvents(eventsWithCoords);
       setFilteredEvents(eventsWithCoords);
     } catch (err) {
-      console.error("Failed to fetch events:", err);
+      // console.error("Failed to fetch events:", err);
       setError("ไม่สามารถดึงข้อมูลเหตุการณ์ได้");
     } finally {
       setLoading(false);
@@ -112,6 +112,7 @@ export default function Top5() {
                   priority={false}
                   placeholder="blur"
                   blurDataURL="/blur.avif"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
               </div>
               <div className="flex-1 mb-8">

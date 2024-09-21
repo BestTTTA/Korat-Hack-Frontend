@@ -34,7 +34,7 @@ const Map3D: React.FC = () => {
           success: (api: any) => {
             api.start();
             api.addEventListener("viewerready", () => {
-              console.log("Viewer is ready");
+              // console.log("Viewer is ready");
 
               // Create a new annotation
               const positionStart = [0, 0, 0];
@@ -51,7 +51,7 @@ const Map3D: React.FC = () => {
                 "This is a custom annotation added dynamically.",
                 (err: any, index: number) => {
                   if (!err) {
-                    console.log(`Annotation created with index: ${index}`);
+                    // console.log(`Annotation created with index: ${index}`);
 
                     api.updateAnnotation(
                       index,
@@ -73,7 +73,7 @@ const Map3D: React.FC = () => {
             });
           },
           error: () => {
-            console.error("Sketchfab API initialization failed");
+            // console.error("Sketchfab API initialization failed");
           },
           annotations_visible: 1,
         });
