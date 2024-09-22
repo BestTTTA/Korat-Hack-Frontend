@@ -211,7 +211,7 @@ const Calendar: React.FC = () => {
                   {selectedEvent.extendedProps.Detail || "No description"}
                 </p>
                 <div className="flex w-full justify-end mt-2">
-                  <button onClick={handleCloseDialog} className="text-white">
+                  <button onClick={handleCloseDialog} className="px-4 py-2 bg-gray-500 text-white rounded">
                     ปิด
                   </button>
                 </div>

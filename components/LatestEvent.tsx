@@ -208,7 +208,7 @@ export default function LatestEvent() {
                   {selectedEvent.Detail || "No description"}
                 </p>
                 <div className="flex w-full justify-end mt-2">
-                  <button onClick={() => setIsDialogOpen(false)} className="text-white">
+                  <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 bg-gray-500 text-white rounded">
                     ปิด
                   </button>
                 </div>

@@ -14,7 +14,6 @@ export default function Footer() {
           alt="Tiger logo"
           height={280}
           width={280}
-          className="invert"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       </div>
