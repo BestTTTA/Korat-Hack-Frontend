@@ -5,8 +5,7 @@ export async function GET(req: Request) {
   const url = searchParams.get('url');
 
   if (!url) {
-    // return NextResponse.json({ error: 'URL ไม่ถูกต้อง' }, { status: 400 });
-    return null
+    return NextResponse.json({ error: 'URL ไม่ถูกต้อง' }, { status: 400 });
   }
 
   try {
@@ -21,10 +20,10 @@ export async function GET(req: Request) {
       const lon = parseFloat(match[2]);
       return NextResponse.json({ lat, lon });
     } else {
-      // return NextResponse.json({ error: 'ไม่สามารถดึงพิกัดได้' }, { status: 400 });
+      return NextResponse.json({ error: 'ไม่สามารถดึงพิกัดได้' }, { status: 400 });
     }
   } catch (error) {
-    // console.error('Error fetching URL:', error);
-    // return NextResponse.json({ error: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' }, { status: 500 });
+    console.error('Error fetching URL:', error);
+    return NextResponse.json({ error: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' }, { status: 500 });
   }
 }
